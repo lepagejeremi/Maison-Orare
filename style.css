@@ -1,21 +1,26 @@
-/* A set of default styles */
+/* Maison Orare Theme ✨🌌 */
+
+/* Variables */
 :root {
-  /* Generic sizing for the page */
   --wrapper-height: 100vh;
 
-  /* Fonts for different elements */
-  --font-family: sans-serif;
+  /* Typo */
+  --font-family: 'Montserrat', sans-serif;
   --font-family-list: monospace;
 
-  /* Colors you'll see cascade through the elements */
-  --color-bg: #99ddff; /* Used for the page body background */
-  --color-bg-alt: #33b1ff; /* Used for social icons on hover */
-  --color-text-main: #004099; /* List text ann social icons on hover */
-  --color-primary: #006aff; /* Headers and borders */
-  --color-highlight: #e7f7fe; /* Highlights */
+  /* Palette inspirée du ciel boréal */
+  --color-bg: #0b0c2a;          /* Nuit profonde */
+  --color-bg-alt: #1a1f4d;      /* Bleu nuit pour hover */
+  --color-text-main: #cce7ff;   /* Texte pâle, lumineux */
+  --color-primary: #6ef2f2;     /* Cyan boréal */
+  --color-highlight: #f7faff;   /* Blanc doux */
+  --color-accent: #a86ef2;      /* Violet boréal */
+
+  /* Floor tint to match 3D scene */
+  --color-floor: #F4A460;       /* Sandy brown */
 }
 
-/* Basic page style resets */
+/* Reset */
 * {
   box-sizing: border-box;
 }
@@ -23,22 +28,29 @@
   display: none !important;
 }
 
-/* Page structure */
+/* Structure */
 body {
   font-family: var(--font-family);
-  background-color: var(--color-bg);
+  background: radial-gradient(ellipse at top, var(--color-bg-alt) 0%, var(--color-bg) 100%);
+  color: var(--color-text-main);
   text-align: center;
   margin: 0;
-  font-size:large;
+  font-size: large;
+  overflow-x: hidden;
+  position: relative;
 }
-/* Page structure */
+
+/* Wrapper */
 .wrapper {
   min-height: var(--wrapper-height);
   display: grid;
   place-items: center;
   margin: 0;
-  padding:1rem 2rem;
+  padding: 1rem 2rem;
+  position: relative;
 }
+
+/* Content */
 .content {
   display: flex;
   flex-direction: column;
@@ -46,69 +58,54 @@ body {
   justify-content: center;
 }
 
+/* Illustration */
 .illustration {
-  max-width:30%;
-  margin:1rem 0 2rem 0;
-  animation: 1s ease-out 0s 1 spinIn;
+  max-width: 40%;
+  margin: 1rem 0 2rem 0;
+  animation: auroraGlow 6s ease-in-out infinite alternate;
 }
-@keyframes spinIn {
-  0% {
-    transform: rotate(0deg);
-  }
-  100% {
-    transform: rotate(360deg);
-  }
-}
-.illustration-404 {
-  max-width:30%;
-  margin:1rem 0 2rem 0;
-  animation: 1s ease-out 0s 1 spinUp;
-  filter: grayscale(100%);
-  animation-fill-mode: forwards;
-} 
-@keyframes spinUp {
-  0% {
-    transform: rotate(0deg);
-  }
-  100% {
-    transform: rotate(180deg);
-  }
+
+/* Aurora animation */
+@keyframes auroraGlow {
+  0% { filter: drop-shadow(0 0 10px var(--color-primary)); }
+  50% { filter: drop-shadow(0 0 20px var(--color-accent)); }
+  100% { filter: drop-shadow(0 0 30px var(--color-primary)); }
 }
 
 /* Typography */
 p {
   margin: 1rem;
-  line-height: 1.3em;
+  line-height: 1.5em;
 }
-p,
-h1,
-h2,
-h3,
-h4,
-h5 {
+p, h1, h2, h3, h4, h5 {
   color: var(--color-text-main);
 }
 h1 {
   display: inline-flex;
   color: var(--color-primary);
   justify-content: center;
+  text-shadow: 0 0 10px var(--color-accent);
 }
-/* Link styles */
+
+/* Links */
 a:link,
 a:visited {
   text-decoration: none;
   border-bottom: 2px solid var(--color-primary);
   color: var(--color-primary);
-  transition: background 0.2s linear;
+  transition: all 0.3s ease;
   font-weight: bold;
 }
 a:hover,
 a:active,
 a:focus {
-  background: var(--color-primary);
-  color:var(--color-highlight);
+  background: linear-gradient(90deg, var(--color-primary), var(--color-accent));
+  color: var(--color-highlight);
+  border-radius: 4px;
+  padding: 0.2rem 0.4rem;
 }
-/* Navigation grid */
+
+/* Footer */
 .footer {
   display: flex;
   justify-content: space-between;
@@ -116,18 +113,102 @@ a:focus {
   padding: 1.5rem 0 0.5rem 0;
   width: 100%;
   flex-wrap: wrap;
-  display: flex;
   justify-content: flex-end;
 }
+
+/* Remix button */
 a.remix {
   background: var(--color-bg-alt);
-  color:var(--color-highlight);
+  color: var(--color-highlight);
   border: 2px solid var(--color-highlight);
-  border-radius: 5px;
-  padding:0.5rem;
-  font-weight:bold;
+  border-radius: 8px;
+  padding: 0.5rem 1rem;
+  font-weight: bold;
+  box-shadow: 0 0 10px var(--color-accent);
 }
 a.remix:hover {
   background: var(--color-primary);
-  color:var(--color-highlight);
+  color: var(--color-highlight);
+  box-shadow: 0 0 20px var(--color-primary);
 }
+
+/* --- Nouveaux ajouts --- */
+
+/* Logo flottant dans le ciel */
+.sky-logo {
+  position: absolute;
+  top: 5%;
+  right: 5%;
+  width: 150px;
+  height: 150px;
+  background: url("public/logo_MaisonOrare_W.png") no-repeat center/contain;
+  animation: floatLogo 6s ease-in-out infinite alternate;
+  cursor: pointer;
+}
+@keyframes floatLogo {
+  0%   { transform: translateY(0px); opacity: 0.8; }
+  100% { transform: translateY(-20px); opacity: 1; }
+}
+/* Responsive logo */
+@media (max-width: 600px) {
+  .sky-logo {
+    width: 100px;
+    height: 100px;
+  }
+}
+
+/* Fond étoilé animé */
+canvas {
+  position: relative;
+  z-index: 0;
+}
+.stars {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  background: transparent url("https://www.transparenttextures.com/patterns/stardust.png") repeat;
+  animation: twinkle 10s linear infinite;
+  z-index: -1;
+}
+@keyframes twinkle {
+  from { opacity: 0.8; }
+  50%  { opacity: 1; }
+  to   { opacity: 0.8; }
+}
+
+/* Aurora overlay */
+.wrapper::before {
+  content: "";
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: linear-gradient(120deg, rgba(106,242,242,0.1), rgba(168,110,242,0.1));
+  animation: auroraShift 12s ease-in-out infinite alternate;
+  z-index: -1;
+}
+@keyframes auroraShift {
+  0% { transform: translateX(-10px); }
+  100% { transform: translateX(10px); }
+}
+
+#musicPanel {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  background: rgba(11,12,42,0.85);
+  color: #cce7ff;
+  padding: 12px 14px;
+  border-radius: 10px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.3);
+  font: 600 14px/1.4 system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+  display: none;          /* caché par défaut */
+  z-index: 100;           /* au-dessus du canvas */
+  pointer-events: none;   /* ne bloque pas la scène */
+}
+#musicPanel ul { margin: 8px 0 0; padding: 0; list-style: none; }
+#musicPanel li { margin: 6px 0; }
+#musicPanel a {
+  pointer-events: auto;   /* liens cliquables */
+  color: #6ef2f2;
+  text-decoration: none;
+}
+#musicPanel a:hover { color: #ffffff; text-decoration: underline; }

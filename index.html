@@ -1,56 +1,149 @@
 <!DOCTYPE html>
-<html lang="en">
-
+<html>
 <head>
-  <!-- 
-      This is an HTML comment
-      You can write text in a comment and the content won't be visible in the page
-    -->
-
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <link rel="icon" href="https://glitch.com/favicon.ico" />
-
-  <!--
-      This is the page head - it contains info the browser uses
-      Like the title, which appears on the browser tab but not inside the page
-      Further down you'll see the content that displays in the page
-    -->
-  <title>Hello World!</title>
-
-  <!-- The website stylesheet -->
-  <link rel="stylesheet" href="/style.css" />
-
-  <!-- The website JavaScript file -->
-  <script src="/script.js" defer></script>
+  <title>Maison Orare Prototype</title>
+  <style>
+    body { margin:0; overflow:hidden; background:radial-gradient(ellipse at top,#1a1f4d 0%,#0b0c2a 100%); }
+    canvas { display:block; }
+  </style>
 </head>
-
 <body>
-  <!--
-      The body includes the content you see in the page
-      Each element is defined using tags, like this <div></div>
-      The attributes like class="wrapper" let us style elements in the CSS
-    -->
-  <div class="wrapper">
-    <div class="content" role="main">
-      <h1 class="title">Oh hi website!</h1>
-      <img src="/cool-website.svg" class="illustration" alt="cool website" />
-      <div class="instructions">
-        <p>
-          Fork <a href="https://github.com/glitchdotcom/website-to-compute">this project</a> and open it in a GitHub Codespace.
-        </p>
-        <p> Follow the steps in the README to deploy your new website to Fastly in a few steps!
-        </p>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/tween.js/18.6.4/tween.umd.js"></script>
+<script>
+const scene=new THREE.Scene();
+const camera=new THREE.PerspectiveCamera(75,innerWidth/innerHeight,0.5,100);
+const renderer=new THREE.WebGLRenderer({antialias:true});
+renderer.setSize(innerWidth,innerHeight);
+renderer.outputEncoding=THREE.sRGBEncoding;
+document.body.appendChild(renderer.domElement);
 
-      </div>
+// Controls & lights
+const controls=new THREE.OrbitControls(camera,renderer.domElement);
+controls.enableDamping=true;controls.dampingFactor=0.05;
+scene.add(new THREE.AmbientLight(0xccccff,0.8));
+const pointLight=new THREE.PointLight(0x88ccff,1,50);pointLight.position.set(5,5,5);scene.add(pointLight);
 
-      <footer class="footer">
-        <div>
-          <a class="remix" href="https://github.com/glitchdotcom/website-to-compute">🚧 Get your own site</a>
-        </div>
-      </footer>
-    </div>
-  </div>
+// Data
+const artists = [
+  { name: "Sandrine Marin", link: "sandrine.html", color: 0xB0E0E6 },
+  { name: "Elmanou de l'Aulne", link: "elmanou.html", color: 0xB22222 },
+  { name: "Durkheim", link: "durkheim.html", color: 0xCC5500 }
+];
+const floors=[];const loader=new THREE.TextureLoader();
+
+// Materials
+const beamTex=loader.load("public/woodbeam.png"),horizTex=loader.load("public/H_woodbeam.png");
+[beamTex,horizTex].forEach(t=>{t.anisotropy=renderer.capabilities.getMaxAnisotropy();t.minFilter=THREE.LinearMipmapLinearFilter;t.magFilter=THREE.LinearFilter;});
+const verticalMat=new THREE.MeshPhongMaterial({map:beamTex,transparent:true,depthWrite:false});
+const horizMat=new THREE.MeshPhongMaterial({map:horizTex,transparent:true,depthWrite:false});
+const floorTex=loader.load("public/beige_wood_floor.jpg");
+floorTex.wrapS=floorTex.wrapT=THREE.RepeatWrapping;floorTex.repeat.set(4,2);floorTex.encoding=THREE.sRGBEncoding;floorTex.anisotropy=renderer.capabilities.getMaxAnisotropy();
+const floorMats=[0,1,2,3,4,5].map(i=>new THREE.MeshPhongMaterial({map:floorTex,color:i===2?0xF4A460:undefined}));
+
+// Helpers
+function addWalls(y,artist,floor){
+  const front=new THREE.Mesh(new THREE.BoxGeometry(16,3,0.2),new THREE.MeshPhongMaterial({
+    color:artist.color,side:THREE.DoubleSide,transparent:true,opacity:0.5,emissive:artist.color,emissiveIntensity:0.2,depthWrite:true
+  }));
+  front.position.set(0,y+1.5,2);front.userData={opened:false,link:artist.link,initialX:front.position.x};
+  scene.add(front);floor.userData.frontWall=front;
+  const back=new THREE.Mesh(new THREE.BoxGeometry(16,3,0.2),new THREE.MeshPhongMaterial({color:artist.color,side:THREE.DoubleSide}));
+  back.position.set(0,y+1.5,-2);scene.add(back);
+}
+function addBeams(y){
+  [-8,8].forEach(x=>{const b=new THREE.Mesh(new THREE.BoxGeometry(6.5,4,0.5),verticalMat);b.position.set(x,y+1.5,-2);scene.add(b);});
+  const top=new THREE.Mesh(new THREE.BoxGeometry(17.5,6.5,0.5),horizMat);top.position.set(0,y+3,-2);scene.add(top);
+  const bot=new THREE.Mesh(new THREE.BoxGeometry(17.5,6.5,0.5),horizMat);bot.position.set(0,y,-2);scene.add(bot);
+}
+function addLabel(text,y){
+  const c=document.createElement('canvas');c.width=512;c.height=128;const ctx=c.getContext('2d');
+  ctx.font='40px Arial';ctx.fillStyle='white';ctx.textAlign='center';ctx.fillText(text,c.width/2,80);
+  const tex=new THREE.CanvasTexture(c);
+  const sprite=new THREE.Sprite(new THREE.SpriteMaterial({map:tex,transparent:true,alphaTest:0.5,depthWrite:true}));
+  sprite.scale.set(9,3,0.1);sprite.position.set(0,y+0.8,0);scene.add(sprite);
+}
+
+// Floors
+const floorGeom=new THREE.BoxGeometry(16,0.1,3);
+artists.forEach((a,i)=>{
+  const f=new THREE.Mesh(floorGeom,floorMats);f.position.y=i*3-6;f.userData={link:a.link,name:a.name};
+  scene.add(f);floors.push(f);
+  addWalls(f.position.y,a,f);addBeams(f.position.y);addLabel(a.name,f.position.y);
+});
+
+// Logo & glow
+const logo=new THREE.Sprite(new THREE.SpriteMaterial({map:loader.load("public/logo_MaisonOrare_W.png"),transparent:true,opacity:1}));
+logo.scale.set(6,6,2);logo.position.set(0,8,-3);logo.userData={link:"apropos.html"};scene.add(logo);
+const glow=new THREE.Sprite(new THREE.SpriteMaterial({map:loader.load("public/glow.png"),transparent:true,opacity:0.6,color:0x6ef2f2}));
+glow.scale.set(innerWidth/15,8,1);glow.position.set(0,8,-4);scene.add(glow);
+
+// Stars
+const starVerts=Array.from({length:1000},()=>[(Math.random()-0.5)*200,(Math.random()-0.5)*200,(Math.random()-0.5)*200]).flat();
+const starGeom=new THREE.BufferGeometry();starGeom.setAttribute('position',new THREE.Float32BufferAttribute(starVerts,3));
+scene.add(new THREE.Points(starGeom,new THREE.PointsMaterial({color:0xffffff,size:0.7})));
+
+camera.position.z=12;
+
+// Animate
+(function animate(){
+  requestAnimationFrame(animate);
+  glow.material.opacity=0.6+0.15*Math.sin(Date.now()*0.002);
+  controls.update();TWEEN.update();renderer.render(scene,camera);
+})();
+
+// Interaction
+const raycaster=new THREE.Raycaster(),mouse=new THREE.Vector2();
+  window.addEventListener('click', (event) => {
+    mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+    mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+    raycaster.setFromCamera(mouse, camera);
+
+    const intersects = raycaster.intersectObjects(scene.children);
+    if (intersects.length === 0) return;
+
+    const obj = intersects[0].object;
+
+    // Toggle front wall open/close
+    if (obj.userData && obj.userData.opened === false) {
+      new TWEEN.Tween(obj.position)
+        .to({ x: obj.userData.initialX + 16 }, 1000)
+        .easing(TWEEN.Easing.Quadratic.Out)
+        .start();
+      obj.userData.opened = true;
+      return;
+    }
+
+    if (obj.userData && obj.userData.opened === true && !obj.userData.justClosed) {
+      new TWEEN.Tween(obj.position)
+        .to({ x: obj.userData.initialX }, 1000)
+        .easing(TWEEN.Easing.Quadratic.Out)
+        .start();
+      obj.userData.opened = false;
+      obj.userData.justClosed = true;
+      setTimeout(() => { obj.userData.justClosed = false; }, 500);
+      return;
+    }
+
+    // Handle links
+    if (obj.userData && obj.userData.link) {
+      const floor = floors.find(f => f.userData.link === obj.userData.link);
+
+      if (floor) {
+        // Floor link → only open if its wall is open
+        if (floor.userData.frontWall.userData.opened) {
+          window.open(obj.userData.link, "_blank");
+        }
+      } else {
+        // Non-floor link (e.g. logo) → open directly
+        window.open(obj.userData.link, "_blank");
+      }
+    }
+  });
+
+// Resize
+addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight);});
+</script>
 </body>
-
 </html>

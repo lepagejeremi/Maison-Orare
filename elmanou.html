@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Étage de Elmanou de l'Aulne</title>
+  <style>
+    body { margin:0; overflow:hidden; background:radial-gradient(ellipse at top,#b0e0e6 0%,#0b0c2a 100%); }
+ canvas {
+  display: block;
+  position: relative;
+  z-index: 0;
+}
+
+     /* Overlay vidéo */
+    #tvScreenOverlay {
+      position:absolute;
+      top:20%;
+      left:20%;
+      width:560px;
+      height:315px;
+      display:none; /* caché par défaut */
+      z-index:10;
+    }
+    #tvScreenOverlay iframe {
+      width:100%;
+      height:100%;
+      border:none;
+    }
+  #musicPanel {
+  position: absolute;
+  display: none; /* caché par défaut */
+  background: rgba(11,12,42,0.85);
+  padding: 10px;
+  border-radius: 8px;
+  color: #cce7ff;
+  font-family: 'Montserrat', sans-serif;
+  z-index: 100;
+}
+#musicPanel a {
+  color: #6ef2f2;
+  text-decoration: none;
+  font-weight: bold;
+}
+#musicPanel a:hover { color: #fff; }
+  </style>
+</head>
+<body>
+    
+    <div id="tvScreenOverlay">
+<iframe 
+    src="https://www.youtube.com/embed/mTlEhRvBlHo"
+    title="Power Couple (Live LPBN)"
+    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+    referrerpolicy="strict-origin-when-cross-origin"
+    allowfullscreen>
+  </iframe>
+</div>
+
+<div id="musicPanel" aria-label="Liens musique de Elmanou" role="navigation">
+  <strong>Écouter Elmanou de l'Aulne</strong>
+  <ul>
+    <li><a href="https://open.spotify.com/intl-fr/artist/5pafHVkYqZE1snBMmS5krn" target="_blank" rel="noopener">Spotify</a></li>
+    <!-- Remplace ou complète avec les vrais liens -->
+    <li><a href="https://music.apple.com/ca/artist/elmanou-de-laulne/1629090278" target="_blank" rel="noopener">Apple Music</a></li> 
+    <li><a href="https://elmanou.bandcamp.com/" target="_blank" rel="noopener">Bandcamp</a></li> 
+    <li><a href="https://soundcloud.com/elman_aulne" target="_blank" rel="noopener">SoundCloud</a></li> 
+  </ul>
+</div>
+
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<script>
+const scene=new THREE.Scene();
+const camera=new THREE.PerspectiveCamera(75,innerWidth/innerHeight,0.5,100);
+const renderer=new THREE.WebGLRenderer({antialias:true});
+renderer.setSize(innerWidth,innerHeight);
+renderer.outputEncoding=THREE.sRGBEncoding;
+document.body.appendChild(renderer.domElement);
+
+// Controls & lights
+const controls=new THREE.OrbitControls(camera,renderer.domElement);
+controls.enableDamping=true;controls.dampingFactor=0.05;
+controls.enablePan = true;
+controls.target.set(0, 0, 0);
+controls.minAzimuthAngle = -0.5;
+controls.maxAzimuthAngle = 0.5;
+controls.minPolarAngle = Math.PI/4;
+controls.maxPolarAngle = Math.PI/2;
+
+scene.add(new THREE.AmbientLight(0xccccff,0.8));
+const pointLight=new THREE.PointLight(0x88ccff,1,50);
+pointLight.position.set(5,5,5);
+scene.add(pointLight);
+
+// Artist data
+const artist={ name:"Elmanou de l'Aulne", link:"https://linktr.ee/elmanaulne", color: 0xB22222 };
+
+// Loader & materials
+const loader=new THREE.TextureLoader();
+const beamTex=loader.load("public/woodbeam.png");
+const horizTex=loader.load("public/H_woodbeam.png");
+[beamTex,horizTex].forEach(t=>{
+  t.anisotropy=renderer.capabilities.getMaxAnisotropy();
+  t.minFilter=THREE.LinearMipmapLinearFilter;
+  t.magFilter=THREE.LinearFilter;
+});
+const verticalMat=new THREE.MeshPhongMaterial({map:beamTex,transparent:true,depthWrite:false});
+const horizMat=new THREE.MeshPhongMaterial({map:horizTex,transparent:true,depthWrite:false});
+const floorTex=loader.load("public/beige_wood_floor.jpg");
+floorTex.wrapS=floorTex.wrapT=THREE.RepeatWrapping;
+floorTex.repeat.set(4,2);
+floorTex.encoding=THREE.sRGBEncoding;
+floorTex.anisotropy=renderer.capabilities.getMaxAnisotropy();
+const floorMat=new THREE.MeshPhongMaterial({map:floorTex});
+
+// Helpers
+function addBeams(y){
+  [-8,8].forEach(x=>{
+    const b=new THREE.Mesh(new THREE.BoxGeometry(6.5,4,0.5),verticalMat);
+    b.position.set(x,y+1.5,-2);
+    scene.add(b);
+  });
+  const top=new THREE.Mesh(new THREE.BoxGeometry(17.5,6.5,0.5),horizMat);
+  top.position.set(0,y+3,-2);scene.add(top);
+  const bot=new THREE.Mesh(new THREE.BoxGeometry(17.5,6.5,0.5),horizMat);
+  bot.position.set(0,y,-2);scene.add(bot);
+}
+function addLabel(text,y){
+  const c=document.createElement('canvas');c.width=512;c.height=128;
+  const ctx=c.getContext('2d');
+  ctx.font='40px Arial';ctx.fillStyle='white';ctx.textAlign='center';
+  ctx.fillText(text,c.width/2,80);
+  const tex=new THREE.CanvasTexture(c);
+  const sprite=new THREE.Sprite(new THREE.SpriteMaterial({map:tex,transparent:true,alphaTest:0.5,depthWrite:true}));
+  sprite.scale.set(9,3,0.1);
+  sprite.position.set(0,y+0.8,0);
+  scene.add(sprite);
+}
+
+// --- TV avec miniature ---
+const tv = new THREE.Mesh(
+  new THREE.BoxGeometry(3, 2, 0.2), // écran plat
+  new THREE.MeshPhongMaterial({ color: 0x000000 })
+);
+tv.position.set(-4, 1.5, -1.7); // accrochée au mur, décalée à gauche
+
+scene.add(tv);
+
+// Charger la miniature YouTube
+const thumbURL = "https://img.youtube.com/vi/mTlEhRvBlHo/hqdefault.jpg";
+const thumbTex = new THREE.TextureLoader().load(thumbURL);
+
+// Écran TV avec miniature
+const tvScreen = new THREE.Mesh(
+  new THREE.PlaneGeometry(2.8, 1.6),
+  new THREE.MeshBasicMaterial({ map: thumbTex })
+);
+tvScreen.position.set(-4, 1.5, -1.5); // légèrement devant le cube
+tvScreen.userData = { showOverlay: true };
+scene.add(tvScreen);
+
+// --- Turntable (group) ---
+    const turntable = new THREE.Group();
+    turntable.position.set(3.5, 0.6, 0.3); // sur le plancher, légèrement à droite
+
+    // Base
+    const ttBase = new THREE.Mesh(
+    new THREE.BoxGeometry(2.2, 0.15, 1.6),
+    new THREE.MeshPhongMaterial({ color: 0x222222 })
+    );
+    turntable.add(ttBase);
+
+    // Platter (disc)
+    const ttPlatter = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.5, 0.5, 0.06, 48),
+    new THREE.MeshPhongMaterial({ color: 0x333333, shininess: 60 })
+    );
+    //ttPlatter.rotation.x = Math.PI / 2;
+    ttPlatter.position.set(-0.3, 0.12, 0);
+    turntable.add(ttPlatter);
+
+    // Spindle (center pin)
+    const ttSpindle = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.02, 0.02, 0.08, 16),
+    new THREE.MeshPhongMaterial({ color: 0xaaaaaa })
+    );
+    ttSpindle.rotation.x = Math.PI / 2;
+    ttSpindle.position.set(-0.3, 0.15, 0);
+    turntable.add(ttSpindle);
+
+    // Tonearm (simple stylized arm)
+    const ttArmBase = new THREE.Mesh(
+    new THREE.CylinderGeometry(0.05, 0.05, 0.12, 16),
+    new THREE.MeshPhongMaterial({ color: 0x888888 })
+    );
+    ttArmBase.position.set(0.7, 0.12, 0.45);
+    turntable.add(ttArmBase);
+
+    const ttArm = new THREE.Mesh(
+    new THREE.BoxGeometry(0.9, 0.03, 0.03),
+    new THREE.MeshPhongMaterial({ color: 0xaaaaaa })
+    );
+    ttArm.position.set(0.25, 0.16, 0.25);
+    turntable.add(ttArm);
+
+    // Needle head
+    const ttHead = new THREE.Mesh(
+    new THREE.BoxGeometry(0.08, 0.03, 0.06),
+    new THREE.MeshPhongMaterial({ color: 0xff5555 })
+    );
+    ttHead.position.set(-0.15, 0.16, 0.2);
+    turntable.add(ttHead);
+
+    // Make the whole group clickable
+    turntable.userData = {
+    openSpotify: "https://open.spotify.com/intl-fr/artist/3YB3SOsXlCM3XuA21evUgP" 
+    };
+    scene.add(turntable);
+
+// Build single floor (Sandrine)
+const floorGeom=new THREE.BoxGeometry(16,0.1,3);
+const floor=new THREE.Mesh(floorGeom,floorMat);
+floor.position.y=0;
+scene.add(floor);
+addBeams(floor.position.y);
+
+// Back wall only
+const backWall=new THREE.Mesh(new THREE.BoxGeometry(16,3,0.2),
+  new THREE.MeshPhongMaterial({color:artist.color,side:THREE.DoubleSide}));
+backWall.position.set(0,floor.position.y+1.5,-2);
+scene.add(backWall);
+
+addLabel(artist.name,floor.position.y);
+
+// Starfield
+const starVerts=Array.from({length:1000},()=>[(Math.random()-0.5)*200,(Math.random()-0.5)*200,(Math.random()-0.5)*200]).flat();
+const starGeom=new THREE.BufferGeometry();
+starGeom.setAttribute('position',new THREE.Float32BufferAttribute(starVerts,3));
+scene.add(new THREE.Points(starGeom,new THREE.PointsMaterial({color:0xffffff,size:0.7})));
+
+// Camera & zoom limits
+camera.position.z = 7;
+controls.minDistance = 2;
+controls.maxDistance = 7;
+
+// --- Interaction clic pour la TV ---
+const raycaster = new THREE.Raycaster();
+const mouse = new THREE.Vector2();
+const overlay = document.getElementById("tvScreenOverlay");
+const musicPanel = document.getElementById("musicPanel");
+
+function updateOverlayPosition() {
+  const halfW = 1.5; // largeur/2 (BoxGeometry 3)
+  const halfH = 1.0; // hauteur/2 (BoxGeometry 2)
+  const zOffset = 0.4; // profondeur/2 (BoxGeometry 0.2)
+
+  const corners = [
+    new THREE.Vector3(tvScreen.position.x - halfW, tvScreen.position.y - halfH, tvScreen.position.z + zOffset),
+    new THREE.Vector3(tvScreen.position.x + halfW, tvScreen.position.y - halfH, tvScreen.position.z + zOffset),
+    new THREE.Vector3(tvScreen.position.x - halfW, tvScreen.position.y + halfH, tvScreen.position.z + zOffset),
+    new THREE.Vector3(tvScreen.position.x + halfW, tvScreen.position.y + halfH, tvScreen.position.z + zOffset)
+  ];
+
+  const projected = corners.map(c => {
+    const v = c.clone().project(camera);
+    return {
+      x: (v.x * 0.5 + 0.5) * window.innerWidth,
+      y: (-v.y * 0.5 + 0.5) * window.innerHeight
+    };
+  });
+
+  const minX = Math.min(...projected.map(p => p.x));
+  const maxX = Math.max(...projected.map(p => p.x));
+  const minY = Math.min(...projected.map(p => p.y));
+  const maxY = Math.max(...projected.map(p => p.y));
+
+  overlay.style.left = minX + "px";
+  overlay.style.top = minY + "px";
+  overlay.style.width = (maxX - minX) + "px";
+  overlay.style.height = (maxY - minY) + "px";
+}
+
+function updateMusicPanelPosition() {
+  // position centrale du tourne-disque
+  const pos = turntable.position.clone().project(camera);
+
+  const x = (pos.x * 0.5 + 0.5) * window.innerWidth;
+  const y = (-pos.y * 0.5 + 0.5) * window.innerHeight;
+
+  // placer le panneau légèrement à droite du tourne-disque
+  musicPanel.style.left = (x + 100) + "px"; 
+  musicPanel.style.top = (y - 40) + "px"; 
+}
+
+
+window.addEventListener("click", (event) => {
+  mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+  mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+  raycaster.setFromCamera(mouse, camera);
+
+  const intersects = raycaster.intersectObjects(scene.children, true);
+
+  // 1) If clicked the tvScreen, show the overlay as before
+  const clickedTV = intersects.find(hit => hit.object === tvScreen);
+  if (clickedTV) {
+    overlay.style.display = "block";
+    updateOverlayPosition();
+    return;
+  }
+
+  // 2) If clicked the turntable (or any child), open Spotify
+const hitTurntable = intersects.find(hit => {
+  let o = hit.object;
+  while (o && o.parent) {
+    if (o === turntable) return true;
+    o = o.parent;
+  }
+  return false;
+});
+
+if (hitTurntable) {
+  if (musicPanel.style.display === "block") {
+    musicPanel.style.display = "none";
+  } else {
+    musicPanel.style.display = "block";
+    updateMusicPanelPosition();
+  }
+  return;
+}
+
+
+
+
+  // 3) Elsewhere: close overlay if open
+  if (overlay.style.display === "block") {
+    overlay.style.display = "none";
+  }
+});
+
+window.addEventListener("mousemove", (event) => {
+  mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+  mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+  raycaster.setFromCamera(mouse, camera);
+
+  const intersects = raycaster.intersectObjects(scene.children, true);
+
+  const overTV = intersects.some(hit => hit.object === tvScreen);
+  const overTurntable = intersects.some(hit => {
+    let o = hit.object;
+    while (o && o.parent) {
+      if (o === turntable) return true;
+      o = o.parent;
+    }
+    return false;
+  });
+
+  renderer.domElement.style.cursor = (overTV || overTurntable) ? "pointer" : "default";
+});
+
+
+// Animate
+(function animate(){
+requestAnimationFrame(animate);
+  controls.update();
+  renderer.render(scene,camera);
+  if (overlay.style.display === "block") {
+    updateOverlayPosition();
+  }
+  if (musicPanel.style.display === "block") {
+  updateMusicPanelPosition();
+}
+
+
+
+})();
+
+// Resize
+addEventListener('resize',()=>{
+  camera.aspect=innerWidth/innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(innerWidth,innerHeight);
+});
+</script>
+</body>
+</html>
